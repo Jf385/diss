@@ -1,0 +1,680 @@
+---
+title: "Write up of analysis"
+output: html_document
+---
+
+This is a document outlining a text mining technique. It is designed for reading in every file with a relevant design and seeing if covariance was reported.
+
+First install the package created by L. Colling on GITHUB and load tidyverse.
+```{r}
+#install.packages("remotes", repos = "http://cran.us.r-project.org")
+#remotes::install_github("ljcolling/jesspkg") # Double colon allows access to exact function in package
+library(tidyverse)
+library(ggdist)
+
+```
+
+
+Obtaining a list of all the files (change to own location of files in first "")
+```{r}
+list_of_files <- list.files("~/Desktop/pdf_txt/", pattern = "*.txt", recursive = TRUE)
+```
+
+
+Then we create a function that imports file names, journal name, year into a dataframe by splitting the file name into different parts and categorising from this.
+```{r}
+get_journal_year <- function(file){
+  data.frame(file = file, 
+             journal = file %>% str_split(string = ., pattern = "/") %>% .[[1]] %>% .[[1]],
+             year = file %>% str_split(string = ., pattern = "/") %>% .[[1]] %>% .[[2]])
+}
+list_of_files <- list_of_files %>% map_df(function(x) get_journal_year(x))
+```
+
+
+
+We then illustrate the vector of words (word_list) we want to find in the file, which is output into boolean form.
+```{r}
+for(i in 1 : length(list_of_files$file)){
+  this_file <- list_of_files$file[[i]]
+  dat <- jesspkg:::import_file(paste0("~/Desktop/pdf_txt/",this_file))
+  has_words <- jesspkg::find_words(text = dat,
+                                   word_list = c(" repeated-measure ",
+                                                 " repeated measure ",
+                                                 " within-subject ",
+                                                 " within subject ",
+                                                 " within-participant ",
+                                                 " within participant ",
+                                                 " paired-t ",
+                                                 " paired t-test ",
+                                                 " dependent sample t-test ",
+                                                 " dependent t-test ",
+                                                 " dependent t ",
+                                                 " repeated measures ANOVA ",
+                                                 " repeated-measures ANOVA ",
+                                                 " mixed ANOVA ",
+                                                 " mixed-ANOVA "
+                                   ))
+    has_cov <- jesspkg::find_cov(text = dat)
+  list_of_files$has_words[i] <- has_words
+  list_of_files$has_cov[i] <- has_cov
+}
+```
+Has_cov does word matching to see if covariance is reported, without the addition of other uses of the word (e.g. ANCOVA).
+
+
+
+## Calculating overall numbers of covariance and designs looking into
+```{r}
+all_designs <- list_of_files[,4]
+amount_using_design <- length(all_designs[all_designs == TRUE])
+amount_using_design
+```
+Therefore 170 out of 928 used the design we are interested in.
+
+```{r}
+reported_ornot <- list_of_files[,5]
+amount_reporting_cov <- length(reported_ornot[reported_ornot == TRUE])
+amount_reporting_cov
+```
+Therefore 46 out of 928 papers reported covariance.
+
+
+
+
+## Total of each journal that reported relevant designs
+
+# Developmental Science
+```{r}
+ds <- list_of_files %>% filter(journal == "dev_sci")
+ds_des <- ds[,4]
+total_ds_design <- length(ds_des[ds_des == TRUE])
+total_ds_design
+```
+
+# Journal of Experimental Social Psychology
+```{r}
+JESP <- list_of_files %>% filter(journal == "journal_exp_soc_psy")
+JESP_des <- JESP[,4]
+total_JESP_design <- length(JESP_des[JESP_des == TRUE])
+total_JESP_design
+```
+
+# Journal of Memory and Lanuage
+```{r}
+jml <- list_of_files %>% filter(journal == "j_mem_lang")
+jml_des <- jml[,4]
+total_jml_design <- length(jml_des[jml_des == TRUE])
+total_jml_design
+```
+
+
+
+
+## Developmental science totals for relevant design, grouped by year
+
+Amount of dev sci using relevant design in 2009
+```{r}
+ds_2009 <- list_of_files %>% filter(journal == "dev_sci", year == "2009")
+ds_2009_des <- ds_2009[,4]
+total_ds_design_2009 <- length(ds_2009_des[ds_2009_des == TRUE])
+total_ds_design_2009
+```
+
+
+Amount of dev_sci using relevant design in 2014
+```{r}
+ds_2014 <- list_of_files %>% filter(journal == "dev_sci", year == "2014")
+ds_2014_des <- ds_2014[,4]
+total_ds_design_2014 <- length(ds_2014_des[ds_2014_des == TRUE])
+total_ds_design_2014
+```
+
+Amount of dev_sci using relevant design in 2019
+```{r}
+ds_2019 <- list_of_files %>% filter(journal == "dev_sci", year == "2019")
+ds_2019_des <- ds_2019[,4]
+total_ds_design_2019 <- length(ds_2019_des[ds_2019_des == TRUE])
+total_ds_design_2019
+```
+
+
+## Journal of Experimental Social Psychology totals for relevant design, grouped by year
+
+Amount of JESP using relevant design in 2009
+```{r}
+JESP_2009 <- list_of_files %>% filter(journal == "journal_exp_soc_psy", year == "2009")
+JESP_2009_des <- JESP_2009[,4]
+total_JESP_design_2009 <- length(JESP_2009_des[JESP_2009_des == TRUE])
+total_JESP_design_2009
+```
+
+Amount of JESP using relevant design in 2014
+```{r}
+JESP_2014 <- list_of_files %>% filter(journal == "journal_exp_soc_psy", year == "2014")
+JESP_2014_des <- JESP_2014[,4]
+total_JESP_design_2014 <- length(JESP_2014_des[JESP_2014_des == TRUE])
+total_JESP_design_2014
+```
+
+Amount of JESP using relevant design in 2019
+```{r}
+JESP_2019 <- list_of_files %>% filter(journal == "journal_exp_soc_psy", year == "2019")
+JESP_2019_des <- JESP_2019[,4]
+total_JESP_design_2019 <- length(JESP_2019_des[JESP_2019_des == TRUE])
+total_JESP_design_2019
+```
+
+
+## Journal of Memory and Language for relevant design, grouped by year
+
+
+Amount of jml using relevant design in 2009
+```{r}
+jml_2009 <- list_of_files %>% filter(journal == "j_mem_lang", year == "2009")
+jml_2009_des <- jml_2009[,4]
+total_jml_design_2009 <- length(jml_2009_des[jml_2009_des == TRUE])
+total_jml_design_2009
+```
+
+Amount of jml using relevant design in 2014
+```{r}
+jml_2014 <- list_of_files %>% filter(journal == "j_mem_lang", year == "2014")
+jml_2014_des <- jml_2014[,4]
+total_jml_design_2014 <- length(jml_2014_des[jml_2014_des == TRUE])
+total_jml_design_2014
+```
+
+Amount of jml using relevant design in 2019
+```{r}
+jml_2019 <- list_of_files %>% filter(journal == "j_mem_lang", year == "2019")
+jml_2019_des <- jml_2019[,4]
+total_jml_design_2019 <- length(jml_2019_des[jml_2019_des == TRUE])
+total_jml_design_2019
+```
+
+
+
+
+
+## Calculating those that did NOT report covariance, when it should have in each journal and year
+```{r}
+list_of_files$reported_check <- ifelse(list_of_files$has_words > list_of_files$has_cov, 'Not reported',
+                     ifelse(list_of_files$has_words < list_of_files$has_cov, 'NA', 'NA'))
+summary_table <- list_of_files %>% dplyr::group_by(journal, year, reported_check) %>% dplyr::summarise(n = n())
+summary_table %>% tidyr::pivot_wider(id_cols = 1:2, names_from = 3, values_from =4)
+```
+This creates a new column 'reported_check' in list_of_files showing which covariance not reported, given that the certain design is used. This is then shown in this summary table as a break down of each journal/year.
+
+
+
+
+
+## Bayesian analysis of the numbers
+
+
+First need to install relevant packages...
+```{r}
+#install.packages("remotes", repos = "http://cran.us.r-project.org")
+#remotes::install_github("ljcolling/bayesbinom", dependencies = FALSE)
+#install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+#install.packages("purrr", repos = "http://cran.us.r-project.org")
+#install.packages("ggdist", repos = "http://cran.us.r-project.org")
+```
+
+Then packages can be loaded.
+
+```{r}
+library(bayesbinom)
+#library(tidyverse)
+```
+
+These packages are used for creating graphs.
+```{r, eval=FALSE}
+#install.packages("ggdist", repos = "http://cran.us.r-project.org")
+library(ggdist)
+```
+
+
+
+
+
+## For general (figures 2, and then 1)
+
+```{r}
+all_cov <- binom_proportions(successes = 8,
+                           trials = 170,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(all_cov)
+all_cov$posterior_histogram(bins = 50) + theme_linedraw() + 
+  labs(x = "Proportion", y = "Posterior probability mass") +
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("all.jpeg", width = 7, height = 5)
+```
+
+
+
+```{r}
+all_cov$prior_plot + theme_linedraw() + labs(x = "Proportion", y = "Probability density") +   theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("prior.jpeg", width = 7, height = 5)
+```
+
+
+## For years (calculations of components of figure 3, then figure 4,5,6)
+
+
+For our first estimate our proportion will be 1 out of 59, for 2009 and 2 out of 53 for 2014.
+We'll use a Beta(1, 1) prior. This is a uniform prior that assigns equal weight to all proportions between 0 and 1.
+```{r}
+the2009_post <- binom_proportions(successes = 1,
+                           trials = 59,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(the2009_post)
+the2014_post <- binom_proportions(successes = 2,
+                           trials = 53,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(the2014_post)
+the2019_post <- binom_proportions(successes = 5,
+                           trials = 58,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(the2019_post)
+```
+
+```{r}
+the2009_post$posterior_histogram(bins = 50) + theme_linedraw() + 
+  labs(x = "Proportion", y = "Posterior probability mass") +
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("2009post.jpeg", width = 7, height = 5)
+the2014_post$posterior_histogram(bins = 50) + theme_linedraw() + 
+  labs(x = "Proportion", y = "Posterior probability mass") +
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("2014post.jpeg", width = 7, height = 5)
+the2019_post$posterior_histogram(bins = 50) + theme_linedraw() + 
+  labs(x = "Proportion", y = "Posterior probability mass") +
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("2019post.jpeg", width = 7, height = 5)
+```
+
+
+
+```{r}
+posterior_difference_09_14 <- the2009_post-the2014_post
+df_09_14 <- data.frame(x = posterior_difference_09_14$posterior_samples)
+```
+
+
+
+Converted posterior difference into a data frame, then this was put into a ggplot, two independent binomial proportions
+```{r}
+df_09_14 %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  ggdist::stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("09_14.jpeg", width = 7, height = 5)
+```
+
+```{r}
+below_zero_09_14 <- sum(posterior_difference_09_14$posterior_samples < 0) / length(posterior_difference_09_14$posterior_samples)
+below_zero_09_14
+```
+
+
+```{r}
+posterior_difference_14_19 <- the2014_post-the2019_post
+df_14_19 <- data.frame(x = posterior_difference_14_19$posterior_samples)
+```
+
+
+
+
+
+```{r}
+df_14_19 %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("14_19.jpeg", width = 7, height = 5)
+```
+
+```{r}
+below_zero <- sum(posterior_difference_14_19$posterior_samples < 0) / length(posterior_difference_14_19$posterior_samples)
+below_zero
+```
+
+
+```{r}
+posterior_difference_09_19 <- the2009_post-the2019_post
+df_09_19 <- data.frame(x = posterior_difference_09_19$posterior_samples)
+df_09_19 %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=11,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("09_19.jpeg", width = 7, height = 5)
+```
+
+
+
+```{r}
+below_zero <- sum(posterior_difference_09_19$posterior_samples < 0) / length(posterior_difference_09_19$posterior_samples)
+below_zero
+```
+
+
+
+
+
+
+## For journals (calculations of components of figure 7, then figure 8,9,10)
+
+
+```{r}
+dev_sci_post <- binom_proportions(successes = 3,
+                           trials = 43,
+                           shape1 = 1,
+                           shape2 = 1)
+mem_lang_post <- binom_proportions(successes = 1,
+                           trials = 53,
+                           shape1 = 1,
+                           shape2 = 1)
+jesp_post <- binom_proportions(successes = 4,
+                           trials = 74,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(dev_sci_post)
+summary(mem_lang_post)
+summary(jesp_post)
+```
+
+```{r}
+dev_sci_post$posterior_histogram(bins = 50) + theme_linedraw() + 
+  labs(x = "Proportion", y = "Posterior probability mass") +
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("dev_sci_post.jpeg", width = 7, height = 5)
+mem_lang_post$posterior_histogram(bins = 50) + theme_linedraw() + 
+  labs(x = "Proportion", y = "Posterior probability mass") +
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("mem_lang_post.jpeg", width = 7, height = 5)
+jesp_post$posterior_histogram(bins = 50) + theme_linedraw() + 
+  labs(x = "Proportion", y = "Posterior probability mass") +
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank())
+ggsave("jesp_post.jpeg", width = 7, height = 5)
+```
+
+
+
+```{r}
+posterior_difference_m_d <- dev_sci_post-mem_lang_post
+df_m_d <- data.frame(x = posterior_difference_m_d$posterior_samples)
+```
+
+```{r}
+df_m_d %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("m_d.jpeg", width = 7, height = 5)
+```
+
+
+```{r}
+below_zero <- sum(posterior_difference_m_d$posterior_samples < 0) / length(posterior_difference_m_d$posterior_samples)
+below_zero
+```
+
+
+
+
+```{r}
+posterior_difference_m_j <- mem_lang_post-jesp_post
+df_m_j <- data.frame(x = posterior_difference_m_j$posterior_samples)
+```
+
+
+```{r}
+df_m_j %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("m_j.jpeg", width = 7, height = 5)
+```
+
+
+
+```{r}
+below_zero <- sum(posterior_difference_m_j$posterior_samples < 0) / length(posterior_difference_m_j$posterior_samples)
+below_zero
+```
+
+
+
+
+```{r}
+posterior_difference_d_j <- dev_sci_post-jesp_post
+df_d_j <- data.frame(x = posterior_difference_d_j$posterior_samples)
+```
+
+```{r}
+df_d_j %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("d_j.jpeg", width = 7, height = 5)
+```
+
+
+```{r}
+below_zero <- sum(posterior_difference_d_j$posterior_samples < 0) / length(posterior_difference_d_j$posterior_samples)
+below_zero
+```
+
+
+
+
+
+## An example of how the random selection was completed
+
+```{r}
+# jesp_2014 <- list_of_files %>% filter(journal == "journal_exp_soc_psy", year == "2014", has_words == "TRUE", reported_check == "Not reported")
+# jesp_2014
+# ran_jesp_2014 <- jesp_2014[sample(nrow(jesp_2014), 10),]
+# ran_jesp_2014
+```
+
+
+
+## Manual checking, Bayesian analysis (figures 12 and 13)
+
+```{r}
+
+actual <- binom_proportions(successes = 40,
+                           trials = 94,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(actual)
+```
+
+
+```{r}
+notactual <- binom_proportions(successes = 54,
+                           trials = 94,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(notactual)
+posterior_difference_act_not <- actual - notactual
+df_act_not <- data.frame(x = posterior_difference_act_not$posterior_samples)
+
+df_act_not %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("act_not.jpeg", width = 7, height = 5)
+
+below_zero <- sum(posterior_difference_act_not$posterior_samples < 0) / length(posterior_difference_act_not$posterior_samples)
+below_zero
+
+```
+
+
+
+```{r}
+man_2009 <- binom_proportions(successes = 13,
+                           trials = 29,
+                           shape1 = 1,
+                           shape2 = 1)
+man_2019 <- binom_proportions(successes = 12,
+                           trials = 33,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(man_2009)
+summary(man_2019)
+```
+
+```{r}
+posterior_differenceman2009_2019 <- man_2009-man_2019
+df_man2009_2019 <- data.frame(x = posterior_differenceman2009_2019$posterior_samples)
+
+df_man2009_2019 %>%
+  ggplot(aes(x = x, fill = stat(x < 0))) +
+  stat_histinterval(point_interval = mode_hdi, slab_type = "pdf") +
+  theme_linedraw() +
+  labs(y = "Probability density", x = "Difference in proportions") + 
+  theme(text=element_text(size=12,  family="Arial"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        legend.title=element_blank()) +
+  scale_fill_manual(values = c("darkgray", "lightgray"), 
+                  name = "diff < 0", labels = c("Higher prop","Lower prop"))
+ggsave("man_2009_2019.jpeg", width = 7, height = 5)
+
+below_zero <- sum(posterior_differenceman2009_2019$posterior_samples < 0) / length(posterior_differenceman2009_2019$posterior_samples)
+below_zero
+```
+
+```{r}
+man_dev_sci <- binom_proportions(successes = 11,
+                           trials = 29,
+                           shape1 = 1,
+                           shape2 = 1)
+man_jesp <- binom_proportions(successes = 19,
+                           trials = 34,
+                           shape1 = 1,
+                           shape2 = 1)
+man_mem_lang <- binom_proportions(successes = 12,
+                           trials = 31,
+                           shape1 = 1,
+                           shape2 = 1)
+summary(man_dev_sci)
+summary(man_jesp)
+summary(man_mem_lang)
+```
+
+
